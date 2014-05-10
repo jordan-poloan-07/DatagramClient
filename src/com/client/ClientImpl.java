@@ -5,8 +5,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 
 public class ClientImpl {
 
@@ -18,38 +16,27 @@ public class ClientImpl {
 
 	private MulticastSocket clientReceiverSocket;
 	private InetAddress multiSocketGroupAddr;
-	private ClientImplCallBack cicb;
+	private ClientImplCallBack clientGuiCallback;
 
-	public ClientImpl(ClientImplCallBack cicb, String serverAddr,
-			String chatName) {
+	public ClientImpl(ClientImplCallBack guiCallback, String serverAddr,
+			String chatName) throws Exception {
 
 		this.serverAddr = serverAddr;
 		this.chatName = chatName;
-		this.cicb = cicb;
+		this.clientGuiCallback = guiCallback;
 
-		try {
-			this.clientReceiverSocket = new MulticastSocket(4446);
-			this.multiSocketGroupAddr = InetAddress.getByName("230.0.0.1");
+		this.clientReceiverSocket = new MulticastSocket(4446);
+		this.multiSocketGroupAddr = InetAddress.getByName("230.0.0.1");
 
-			clientReceiverSocket.joinGroup(multiSocketGroupAddr);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+		clientReceiverSocket.joinGroup(multiSocketGroupAddr);
+
 	}
-	
+
 	public void startClientImpl() {
-		new ReceiverThread(this.cicb).start();
+		new ReceiverThread(clientGuiCallback).start();
 	}
-	
+
 	public void sendPacket(String entered) {
-
-		entered = chatName + " >> " + entered; // add the chat name to the
-												// message
-
-		byte[] buffer = entered.getBytes();
 
 		InetAddress server = null;
 		DatagramSocket socket = null;
@@ -60,33 +47,45 @@ public class ClientImpl {
 
 			server = InetAddress.getByName(serverAddr);
 
+			entered = socket.getLocalAddress().getHostAddress() + " "
+					+ chatName + " >> " + entered;
+
+			byte[] buffer = entered.getBytes();
+
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length,
 					server, 9770);
 
 			socket.send(packet);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		} catch (SocketException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+
+		} catch (Exception e) {
+			clientGuiCallback.callback(e.getLocalizedMessage());
 		}
 
 		socket.close();
+
 	}
 
-	private String receivePackets() throws IOException {
+	private String receivePackets() {
+
 		DatagramPacket packet;
 
 		byte[] buf = new byte[60000];
+
 		packet = new DatagramPacket(buf, buf.length);
-		clientReceiverSocket.receive(packet);
 
-		String received = new String(packet.getData(), 0, packet.getLength())
-				.trim();
-		System.out.println(received.length());
+		// received will check receive the exception's message
+		// or the messages from the socket
 
-		// append(received.trim());
+		String received = null;
+
+		try {
+			clientReceiverSocket.receive(packet);
+		} catch (IOException e) {
+			received = e.getLocalizedMessage();
+		}
+
+		received = new String(packet.getData(), 0, packet.getLength()).trim();
+
 		return received.trim();
 	}
 
@@ -101,11 +100,7 @@ public class ClientImpl {
 		@Override
 		public void run() {
 			while (true) {
-				try {
-					ciCallBack.callback(receivePackets());
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				ciCallBack.callback(receivePackets());
 			}
 		}
 

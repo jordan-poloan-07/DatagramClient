@@ -3,7 +3,7 @@ package com.client;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
+
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -19,7 +19,7 @@ public class Client implements ActionListener, ClientImplCallBack {
 
 	private ClientImpl cImpl;
 
-	public Client(String hostaddress, String name) throws IOException {
+	public Client(String hostaddress, String name) throws Exception {
 
 		frame = new JFrame("Client");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -42,14 +42,16 @@ public class Client implements ActionListener, ClientImplCallBack {
 
 	@Override
 	public void actionPerformed(ActionEvent evt) {
+		
 		String entered = evt.getActionCommand();
+		
 		chatInput.setText("");
 
 		cImpl.sendPacket(entered);
+	
 	}
 
 	@Override
-	// this method is the bridge betwee Client and ClientImpl
 	public void callback(String message) {
 		append(message); 
 	}

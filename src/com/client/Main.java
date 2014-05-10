@@ -1,10 +1,9 @@
 package com.client;
 
-import java.io.IOException;
-
 import javax.swing.JOptionPane;
 
 public class Main {
+	
 	public static void main(String[] args) {
 		try {
 
@@ -21,10 +20,12 @@ public class Main {
 				name = JOptionPane.showInputDialog("Enter your chat username");
 			} while (name == null || name.trim().equals(""));
 
-			new Client(server, name);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Client c = new Client(server, name);
+			c.callback("Welcome to the multicast socket chat program");
+			
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e.getLocalizedMessage());
+			System.exit(0);
 		}
 	}
 }
